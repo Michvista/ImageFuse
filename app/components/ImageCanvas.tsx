@@ -111,48 +111,87 @@ export default function ImageCanvas({
     }
   }, [currentBox, image]);
 
-  const getMousePos = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
+ const getPointerPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
+   const canvas = canvasRef.current;
+   if (!canvas) return { x: 0, y: 0 };
 
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
-  };
+   const rect = canvas.getBoundingClientRect();
+   return {
+     x: e.clientX - rect.left,
+     y: e.clientY - rect.top,
+   };
+ };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!canSelect) return;
+ const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+   if (!canSelect) return;
 
-    const pos = getMousePos(e);
-    setIsDrawing(true);
-    setStartPoint(pos);
-    setCurrentBox(null);
-  };
+   e.preventDefault();
+   canvasRef.current?.setPointerCapture(e.pointerId);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !canSelect) return;
+   const pos = getPointerPos(e);
+   setIsDrawing(true);
+   setStartPoint(pos);
+   setCurrentBox(null);
+ };
 
-    const pos = getMousePos(e);
-    const box: SelectionBox = {
-      x: Math.min(startPoint.x, pos.x),
-      y: Math.min(startPoint.y, pos.y),
-      width: Math.abs(pos.x - startPoint.x),
-      height: Math.abs(pos.y - startPoint.y),
-    };
+ const handlePointerUp = () => {
+   if (!canSelect) return;
 
-    setCurrentBox(box);
-  };
+   setIsDrawing(false);
 
-  const handleMouseUp = () => {
-    if (!canSelect) return;
+   if (currentBox && currentBox.width > 20 && currentBox.height > 20) {
+     onSelectionChange(currentBox);
+   }
+ };
 
-    setIsDrawing(false);
-    if (currentBox && currentBox.width > 20 && currentBox.height > 20) {
-      onSelectionChange(currentBox);
-    }
-  };
+ const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+   if (!isDrawing || !canSelect) return;
+
+   const pos = getPointerPos(e);
+
+   const box: SelectionBox = {
+     x: Math.min(startPoint.x, pos.x),
+     y: Math.min(startPoint.y, pos.y),
+     width: Math.abs(pos.x - startPoint.x),
+     height: Math.abs(pos.y - startPoint.y),
+   };
+
+   setCurrentBox(box);
+ };
+
+
+
+  // const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  //   if (!canSelect) return;
+
+  //   const pos = getPointerPos(e);
+  //   setIsDrawing(true);
+  //   setStartPoint(pos);
+  //   setCurrentBox(null);
+  // };
+
+  // const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  //   if (!isDrawing || !canSelect) return;
+
+  //   const pos = getPointerPos(e);
+  //   const box: SelectionBox = {
+  //     x: Math.min(startPoint.x, pos.x),
+  //     y: Math.min(startPoint.y, pos.y),
+  //     width: Math.abs(pos.x - startPoint.x),
+  //     height: Math.abs(pos.y - startPoint.y),
+  //   };
+
+  //   setCurrentBox(box);
+  // };
+
+  // const handleMouseUp = () => {
+  //   if (!canSelect) return;
+
+  //   setIsDrawing(false);
+  //   if (currentBox && currentBox.width > 20 && currentBox.height > 20) {
+  //     onSelectionChange(currentBox);
+  //   }
+  // };
 
   return (
     <div className="flex flex-col gap-4 group">
@@ -171,11 +210,13 @@ export default function ImageCanvas({
         className="relative bg-white rounded-sm overflow-hidden shadow-soft aspect-[3/4] border border-[#E6DDD0]/30">
         <canvas
           ref={canvasRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          className={`w-full h-full ${canSelect ? "cursor-crosshair" : ""}`}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+          className={`w-full h-full touch-none ${
+            canSelect ? "cursor-crosshair" : ""
+          }`}
         />
 
         <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-stone-900/80 via-stone-900/40 to-transparent pointer-events-none">
