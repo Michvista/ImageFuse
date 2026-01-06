@@ -1,26 +1,124 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+
 @import "tailwindcss";
+@config "../tailwind.config.ts";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --primary: #f4e225;
+    --background-light: #F9F6F0;
+    --sand: #E6DDD0;
+    --terracotta: #8C4B3D;
+    --stone-dark: #1C1917;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Custom Range Input Styling */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+  height: 1px;
+  background: sandybrown;
+  transform: translateY(-5px);
+}
+
+input[type='range']::-webkit-slider-track {
+  background: #E6DDD0;
+  height: 4px;
+  border-radius: 2px;
+}
+
+input[type='range']::-moz-range-track {
+  background: #E6DDD0;
+  height: 4px;
+  border-radius: 2px;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #8C4B3D;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  border: 2px solid #F9F6F0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  margin-top: -6px;
+  cursor: pointer;
+}
+
+input[type='range']::-moz-range-thumb {
+  background: #8C4B3D;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  border: 2px solid #F9F6F0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+input[type='range']:focus::-webkit-slider-track {
+  background: #D6CDC0;
+}
+
+input[type='range']:focus::-moz-range-track {
+  background: #D6CDC0;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F9F6F0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E6DDD0;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #D6CDC0;
+}
+
+/* Shimmer Animation */
+@keyframes shimmer {
+  0% {
+    background-position: 150% 150%;
+  }
+  100% {
+    background-position: -50% -50%;
+  }
+}
+
+.shimmer-overlay {
+  background: linear-gradient(
+    45deg,
+    rgba(244, 226, 37, 0) 40%,
+    rgba(244, 226, 37, 0.1) 50%,
+    rgba(244, 226, 37, 0) 60%
+  );
+  background-size: 200% 200%;
+  animation: shimmer 3s infinite;
+}
+
+/* Scan Animation */
+@keyframes scan {
+  0%, 100% {
+    transform: translateY(-100%);
+  }
+  50% {
+    transform: translateY(400%);
+  }
+}
+
+.animate-scan {
+  animation: scan 4s ease-in-out infinite;
 }
