@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ArrowRight, Sparkles, Save } from "lucide-react";
+import { ArrowRight, Sparkles, Save, Download } from "lucide-react";
 import ImageCanvas from "./components/ImageCanvas";
 import ImageUploader from "./components/ImageUploader";
 import { SelectionBox, FusionParameters, FusionRequest } from "./lib/types";
@@ -189,12 +189,11 @@ const handleBaseImageUpload = async (file: File) => {
                       className="w-full h-full object-cover"
                     />
 
-                    {/* Download button overlay */}
                     <a
                       href={resultImage}
                       download="fusion_result.png"
                       className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity rounded-sm">
-                      <Save className="w-10 h-10 text-white" />
+                      <Download className="w-10 h-10 text-white" />
                     </a>
                   </div>
                 ) : (
