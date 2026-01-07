@@ -23,10 +23,10 @@ export interface FusionParameters {
 }
 
 export interface FusionRequest {
-  baseImage: string;          // base64 or URL
-  sourceImage: string;        // base64 or URL
+  baseImage: string;          // base64
+  sourceImage: string;        // base64
   selectionBox: SelectionBox;
-  detailImage?: string;       // base64 or URL
+  detailImage?: string;       // base64
   prompt: string;
   parameters: FusionParameters;
 }
