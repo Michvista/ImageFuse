@@ -310,7 +310,7 @@ const handleBaseImageUpload = async (file: File) => {
 
                 <button
                   onClick={handleFusion}
-                  disabled={isProcessing || !selection}
+                  disabled={isProcessing}
                   className="w-full py-4 bg-[#8C4B3D] hover:bg-[#7a3e31] disabled:bg-stone-300 text-white rounded-sm font-bold tracking-widest text-xs transition-all shadow-lg hover:shadow-xl active:scale-[0.99] flex items-center justify-center gap-3 group uppercase">
                   {isProcessing ? "Processing..." : "Initialize Fusion"}
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
