@@ -16,6 +16,7 @@ interface ImageCanvasProps {
   title: string;
   subtitle: string;
   canSelect?: boolean;
+  onContainerReady?: (el: HTMLDivElement) => void;
 }
 
 export default function ImageCanvas({
@@ -24,6 +25,7 @@ export default function ImageCanvas({
   title,
   subtitle,
   canSelect = false,
+  onContainerReady,
 }: ImageCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -206,7 +208,10 @@ export default function ImageCanvas({
       </div>
 
       <div
-        ref={containerRef}
+        ref={(el) => {
+          containerRef.current = el;
+          if (el && onContainerReady) onContainerReady(el);
+        }}
         className="relative bg-white rounded-sm overflow-hidden shadow-soft aspect-[3/4] border border-[#E6DDD0]/30">
         <canvas
           ref={canvasRef}

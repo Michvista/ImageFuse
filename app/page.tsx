@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowRight, Sparkles, Save } from "lucide-react";
 import ImageCanvas from "./components/ImageCanvas";
 import ImageUploader from "./components/ImageUploader";
 import { SelectionBox, FusionParameters, FusionRequest } from "./lib/types";
 import toast, { Toaster } from "react-hot-toast";
+import { cropImageToBase64 } from "./lib/cropHelper";
 
 export default function Home() {
   const [baseImage, setBaseImage] = useState<string | null>(null);
@@ -22,15 +23,27 @@ export default function Home() {
     seamlessBlend: 92,
   });
 
-  const handleBaseImageUpload = (file: File) => {
-    const url = URL.createObjectURL(file);
-    setBaseImage(url);
-    toast.success("Base image loaded");
-  };
+  const sourceContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const handleSourceImageUpload = (file: File) => {
-    const url = URL.createObjectURL(file);
-    setSourceImage(url);
+
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+const handleBaseImageUpload = async (file: File) => {
+  const base64 = await fileToBase64(file);
+  setBaseImage(base64);
+    toast.success("Base image loaded");
+};
+
+
+  const handleSourceImageUpload = async (file: File) => {
+    const base64 = await fileToBase64(file);
+    setSourceImage(base64);
     toast.success("Source image loaded");
   };
 
@@ -39,6 +52,17 @@ export default function Home() {
       toast.error("Please upload both images and select a region");
       return;
     }
+    if (!selection || !sourceContainerRef.current) {
+      toast.error("Please select a region");
+      return;
+    }
+
+    const detailImage = await cropImageToBase64(
+      sourceImage,
+      selection,
+      sourceContainerRef.current
+    );
+
 
     if (!fusionPrompt.trim()) {
       toast.error("Please provide a fusion prompt");
@@ -51,6 +75,7 @@ export default function Home() {
       const request: FusionRequest = {
         baseImage,
         sourceImage,
+        detailImage,
         selectionBox: selection,
         prompt: fusionPrompt,
         parameters,
@@ -157,11 +182,21 @@ export default function Home() {
                 </div>
 
                 {resultImage ? (
-                  <img
-                    src={resultImage}
-                    alt="Fusion result"
-                    className="w-full h-full object-cover"
-                  />
+                  <div className="relative w-full h-full group">
+                    <img
+                      src={resultImage}
+                      alt="Fusion result"
+                      className="w-full h-full object-cover"
+                    />
+
+                    {/* Download button overlay */}
+                    <a
+                      href={resultImage}
+                      download="fusion_result.png"
+                      className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity rounded-sm">
+                      <Save className="w-10 h-10 text-white" />
+                    </a>
+                  </div>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-stone-400">
                     <p className="text-sm font-serif">
@@ -288,6 +323,7 @@ export default function Home() {
             <div className="lg:col-span-4">
               <ImageCanvas
                 imageUrl={sourceImage}
+                onContainerReady={(el) => (sourceContainerRef.current = el)}
                 onSelectionChange={(selection) =>
                   setSelection(
                     selection ? { ...selection, imageId: sourceImage! } : null
