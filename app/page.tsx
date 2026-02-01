@@ -125,7 +125,9 @@ const handleBaseImageUpload = async (file: File) => {
           </div>
           <button className="bg-stone-900 hover:bg-stone-800 text-white px-5 py-2 rounded-full text-sm font-medium shadow-sm transition-colors flex items-center gap-2">
             <Save className="w-4 h-4" />
-            <span className="font-serif italic">Save Project</span>
+            <a href={resultImage ?? undefined} download="fusion_result.png">
+              <span className="font-serif italic">Save Project</span>
+            </a>
           </button>
         </div>
       </nav>
@@ -190,7 +192,7 @@ const handleBaseImageUpload = async (file: File) => {
                     />
 
                     <a
-                      href={resultImage}
+                      href={resultImage ?? undefined}
                       download="fusion_result.png"
                       className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity rounded-sm">
                       <Download className="w-10 h-10 text-white" />
@@ -325,7 +327,7 @@ const handleBaseImageUpload = async (file: File) => {
                 onContainerReady={(el) => (sourceContainerRef.current = el)}
                 onSelectionChange={(selection) =>
                   setSelection(
-                    selection ? { ...selection, imageId: sourceImage! } : null
+                    selection ? { ...selection, imageId: sourceImage! } : null,
                   )
                 }
                 title="Detail Source"
