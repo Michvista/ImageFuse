@@ -45,15 +45,9 @@ The project was inspired by a real-life scenario where two different fashion des
 - Prompt design for visual reasoning
 - Building clean UX around AI systems
 
----
-
-## 🔮 Future Improvements
-- Region-specific element selection
-- Multi-image fusion
-- Download and sharing features
 
 ---
 
 ## 🔗 Links
-- Demo Video: [https://youtube.com/your-link](https://youtu.be/8gkYurDbbew)
-- Live Demo: [https://your-link](https://image-fuse.vercel.app/)
+- Demo Video: (https://youtu.be/8gkYurDbbew)
+- Live Demo: (https://image-fuse.vercel.app/)
