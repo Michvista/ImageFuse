@@ -38,6 +38,19 @@ function extractBase64(imageString: string): {
   };
 }
 
+function getImageModels(): string[] {
+  const primary = process.env.GEMINI_IMAGE_MODEL?.trim() || "gemini-nano-banana-2.1";
+  const fallbacks = (
+    process.env.GEMINI_IMAGE_FALLBACK_MODELS ||
+    "gemini-3.1-flash-image,gemini-3-pro-image"
+  )
+    .split(",")
+    .map((model) => model.trim())
+    .filter(Boolean);
+
+  return [...new Set([primary, ...fallbacks])];
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Parse the incoming request body
@@ -142,35 +155,40 @@ Generate the fused image now.`;
       },
     ];
 
-    console.log("🚀 Calling Gemini 2.5 Flash Image API...");
-
-    // Call Gemini API with the image generation model
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-image",
-      contents: promptArray,
-    });
-
-    console.log("✅ Gemini API responded");
-
-    // Process the response
+    // Try the configured image model first, then other supported image models.
     let generatedImageBase64: string | null = null;
     let analysisText = "";
 
-    // Extract text and image from response parts
-    if (response.candidates && response.candidates[0]?.content?.parts) {
-      for (const part of response.candidates[0].content.parts) {
-        // Check for text response (analysis/description)
-        if (part.text) {
-          analysisText += part.text;
-          console.log("📝 Analysis text found");
+    const imageModels = getImageModels();
+    for (const [index, model] of imageModels.entries()) {
+      try {
+        console.log(`🚀 Calling Gemini image model: ${model}`);
+        const response = await ai.models.generateContent({
+          model,
+          contents: promptArray,
+        });
+
+        for (const part of response.candidates?.[0]?.content?.parts ?? []) {
+          if (part.text) analysisText += part.text;
+          if (part.inlineData?.data) {
+            generatedImageBase64 = part.inlineData.data;
+            console.log(`🖼️ Generated image with ${model} (${part.inlineData.mimeType})`);
+            break;
+          }
         }
-        // Check for generated image
-        else if (part.inlineData) {
-          generatedImageBase64 = part.inlineData.data ?? null;
-          console.log("🖼️  Generated image found!");
-          console.log(`   Format: ${part.inlineData.mimeType}`);
+
+        if (generatedImageBase64) break;
+        if (index < imageModels.length - 1) {
+          console.warn(`[Gemini] ${model} returned no image; trying the next image model.`);
         }
+      } catch (error) {
+        if (index === imageModels.length - 1) throw error;
+        console.warn(`[Gemini] ${model} failed; trying the next image model.`, error);
       }
+    }
+
+    if (!generatedImageBase64) {
+      throw new Error("Gemini image models returned no generated image. Check model access and API quota.");
     }
 
     // Calculate confidence score based on parameters
@@ -182,19 +200,8 @@ Generate the fused image now.`;
     );
 
     // Prepare the result image
-    let resultImage: string;
-    let hasGeneratedImage = false;
-
-    if (generatedImageBase64) {
-      // Format as data URL for frontend display
-      resultImage = `data:image/png;base64,${generatedImageBase64}`;
-      hasGeneratedImage = true;
-      console.log("✨ Fusion successful! Returning generated image.");
-    } else {
-      // Fallback to base image if no image was generated
-      resultImage = baseImage;
-      console.log("⚠️  No image generated, returning base image as fallback");
-    }
+    const resultImage = `data:image/png;base64,${generatedImageBase64}`;
+    console.log("✨ Fusion successful! Returning generated image.");
 
     // Return success response
     return NextResponse.json({
@@ -203,10 +210,8 @@ Generate the fused image now.`;
       confidence: avgConfidence,
       processingTime: 2500, // Approximate
       analysis: analysisText || "Image fusion completed",
-      hasGeneratedImage: hasGeneratedImage,
-      message: hasGeneratedImage
-        ? "🎉 Image fusion completed successfully!"
-        : "⚠️ Analysis completed but no image was generated. The model may need more specific instructions.",
+      hasGeneratedImage: true,
+      message: "🎉 Image fusion completed successfully!",
     });
   } catch (error: any) {
     console.error("❌ Fusion API error:", error);
@@ -230,7 +235,10 @@ export async function GET(request: NextRequest) {
     status: "ok",
     service: "ImageFuse Fusion API",
     version: "1.0.0",
-    model: "gemini-2.5-flash-image",
+    model: process.env.GEMINI_IMAGE_MODEL || "gemini-nano-banana-2.1",
+    fallbackModels:
+      process.env.GEMINI_IMAGE_FALLBACK_MODELS ||
+      "gemini-3.1-flash-image,gemini-3-pro-image",
     endpoints: {
       POST: "/api/fusion - Process image fusion with Gemini AI",
       GET: "/api/fusion - Health check",

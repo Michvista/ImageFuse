@@ -31,6 +31,15 @@ The project was inspired by a real-life scenario where two different fashion des
 3. Gemini analyzes visual elements and text
 4. A fused image is generated and returned
 
+## Gemini model configuration
+
+Set `GEMINI_API_KEY` in your deployment environment. ImageFuse uses
+`gemini-nano-banana-2.1` for image fusion because Gemini 3.8 Flash returns text
+only. If an image model fails, the API tries the models listed in
+`GEMINI_IMAGE_FALLBACK_MODELS` in order. Set `GEMINI_IMAGE_MODEL` and
+`GEMINI_IMAGE_FALLBACK_MODELS` to change the model order without changing code.
+See `.env.example` for the current defaults.
+
 ---
 
 ## 🚧 Challenges
