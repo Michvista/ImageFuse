@@ -30,10 +30,10 @@ export default function ImageCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [startPoint, setStartPoint] = useState({ x: 0, y: 0 });
   const [currentBox, setCurrentBox] = useState<SelectionBox | null>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const isDrawingRef = useRef(false);
+  const startPointRef = useRef({ x: 0, y: 0 });
 
   // Load image
   useEffect(() => {
@@ -124,42 +124,58 @@ export default function ImageCanvas({
    };
  };
 
- const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-   if (!canSelect) return;
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!canSelect) return;
 
-   e.preventDefault();
-   canvasRef.current?.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
 
-   const pos = getPointerPos(e);
-   setIsDrawing(true);
-   setStartPoint(pos);
-   setCurrentBox(null);
- };
+    startPointRef.current = getPointerPos(e);
+    isDrawingRef.current = true;
+    setCurrentBox(null);
+    onSelectionChange(null);
+  };
 
- const handlePointerUp = () => {
-   if (!canSelect) return;
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current || !canSelect) return;
 
-   setIsDrawing(false);
+    const pos = getPointerPos(e);
+    const start = startPointRef.current;
+    const box = {
+      x: Math.min(start.x, pos.x),
+      y: Math.min(start.y, pos.y),
+      width: Math.abs(pos.x - start.x),
+      height: Math.abs(pos.y - start.y),
+    };
 
-   if (currentBox && currentBox.width > 20 && currentBox.height > 20) {
-     onSelectionChange(currentBox);
-   }
- };
+    setCurrentBox(box);
+  };
 
- const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-   if (!isDrawing || !canSelect) return;
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current || !canSelect) return;
 
-   const pos = getPointerPos(e);
+    isDrawingRef.current = false;
+    const pos = getPointerPos(e);
+    const start = startPointRef.current;
+    const box = {
+      x: Math.min(start.x, pos.x),
+      y: Math.min(start.y, pos.y),
+      width: Math.abs(pos.x - start.x),
+      height: Math.abs(pos.y - start.y),
+    };
 
-   const box: SelectionBox = {
-     x: Math.min(startPoint.x, pos.x),
-     y: Math.min(startPoint.y, pos.y),
-     width: Math.abs(pos.x - startPoint.x),
-     height: Math.abs(pos.y - startPoint.y),
-   };
+    if (box.width > 20 && box.height > 20) {
+      setCurrentBox(box);
+      onSelectionChange(box);
+    } else {
+      setCurrentBox(null);
+      onSelectionChange(null);
+    }
 
-   setCurrentBox(box);
- };
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
 
 
 
@@ -218,7 +234,11 @@ export default function ImageCanvas({
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          onPointerLeave={handlePointerUp}
+          onPointerCancel={() => {
+            isDrawingRef.current = false;
+            setCurrentBox(null);
+            onSelectionChange(null);
+          }}
           className={`w-full h-full touch-none ${
             canSelect ? "cursor-crosshair" : ""
           }`}

@@ -34,11 +34,10 @@ The project was inspired by a real-life scenario where two different fashion des
 ## Gemini model configuration
 
 Set `GEMINI_API_KEY` in your deployment environment. ImageFuse uses
-`gemini-nano-banana-2.1` for image fusion because Gemini 3.8 Flash returns text
-only. If an image model fails, the API tries the models listed in
-`GEMINI_IMAGE_FALLBACK_MODELS` in order. Set `GEMINI_IMAGE_MODEL` and
-`GEMINI_IMAGE_FALLBACK_MODELS` to change the model order without changing code.
-See `.env.example` for the current defaults.
+`gemini-3.8-flash` to analyze the reference images and plan the edit, then uses
+`gemini-nano-banana-2.1` to generate the resulting image because Gemini 3.8
+Flash returns text only. The reasoning and image model fallbacks are separately
+configurable through the variables in `.env.example`.
 
 ---
 

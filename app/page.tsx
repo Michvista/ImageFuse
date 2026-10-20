@@ -37,6 +37,7 @@ const fileToBase64 = (file: File): Promise<string> =>
 const handleBaseImageUpload = async (file: File) => {
   const base64 = await fileToBase64(file);
   setBaseImage(base64);
+    setResultImage(null);
     toast.success("Base image loaded");
 };
 
@@ -44,6 +45,8 @@ const handleBaseImageUpload = async (file: File) => {
   const handleSourceImageUpload = async (file: File) => {
     const base64 = await fileToBase64(file);
     setSourceImage(base64);
+    setSelection(null);
+    setResultImage(null);
     toast.success("Source image loaded");
   };
 

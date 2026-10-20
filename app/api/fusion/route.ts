@@ -51,6 +51,54 @@ function getImageModels(): string[] {
   return [...new Set([primary, ...fallbacks])];
 }
 
+function getReasoningModels(): string[] {
+  const primary = process.env.GEMINI_REASONING_MODEL?.trim() || "gemini-3.8-flash";
+  const fallbacks = (
+    process.env.GEMINI_REASONING_FALLBACK_MODELS || "gemini-flash-latest"
+  )
+    .split(",")
+    .map((model) => model.trim())
+    .filter(Boolean);
+
+  return [...new Set([primary, ...fallbacks])];
+}
+
+async function createFusionPlan(
+  fusionPrompt: string,
+  referenceImages: Array<{ inlineData: { mimeType: string; data: string } }>,
+): Promise<string> {
+  const analysisPrompt = `${fusionPrompt}
+
+Analyze the base garment, source garment, and selected detail image. Return a concise, actionable visual editing plan for an image-generation model. Specify the exact feature to transfer, placement, scale, orientation, fabric details, lighting, and what must remain unchanged. Do not claim to generate an image.`;
+  const models = getReasoningModels();
+  let lastError: unknown;
+
+  for (const [index, model] of models.entries()) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: [{ text: analysisPrompt }, ...referenceImages],
+      });
+      const plan = (response.candidates?.[0]?.content?.parts ?? [])
+        .map((part) => part.text ?? "")
+        .join("\n")
+        .trim();
+
+      if (!plan) throw new Error(`${model} returned no visual editing plan.`);
+      return plan;
+    } catch (error) {
+      lastError = error;
+      if (index < models.length - 1) {
+        console.warn(`[Gemini] ${model} analysis failed; trying ${models[index + 1]}.`, error);
+      }
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Gemini could not create a visual editing plan.");
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Parse the incoming request body
@@ -132,9 +180,7 @@ INSTRUCTIONS:
 
 Generate the fused image now.`;
 
-    // Prepare the prompt array with text and both images
-    const promptArray = [
-      { text: fusionPrompt },
+    const referenceImages = [
       {
         inlineData: {
           mimeType: baseImageData.mimeType,
@@ -154,6 +200,15 @@ Generate the fused image now.`;
         },
       },
     ];
+
+    const visualPlan = await createFusionPlan(fusionPrompt, referenceImages);
+    const imagePrompt = `${fusionPrompt}
+
+VISUAL EDITING PLAN FROM GEMINI 3.8 FLASH:
+${visualPlan}
+
+Use this plan to generate the fused garment image. Preserve the base image everywhere outside the requested edit.`;
+    const promptArray = [{ text: imagePrompt }, ...referenceImages];
 
     // Try the configured image model first, then other supported image models.
     let generatedImageBase64: string | null = null;
@@ -239,6 +294,9 @@ export async function GET(request: NextRequest) {
     fallbackModels:
       process.env.GEMINI_IMAGE_FALLBACK_MODELS ||
       "gemini-3.1-flash-image,gemini-3-pro-image",
+    reasoningModel: process.env.GEMINI_REASONING_MODEL || "gemini-3.8-flash",
+    reasoningFallbackModels:
+      process.env.GEMINI_REASONING_FALLBACK_MODELS || "gemini-flash-latest",
     endpoints: {
       POST: "/api/fusion - Process image fusion with Gemini AI",
       GET: "/api/fusion - Health check",

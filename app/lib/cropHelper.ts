@@ -12,18 +12,35 @@ async function cropImageToBase64(
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d")!;
 
-  const scaleX = img.width / container.clientWidth;
-  const scaleY = img.height / container.clientHeight;
+  const scale = Math.min(
+    container.clientWidth / img.width,
+    container.clientHeight / img.height,
+  );
+  const offsetX = (container.clientWidth - img.width * scale) / 2;
+  const offsetY = (container.clientHeight - img.height * scale) / 2;
+  const clamp = (value: number, max: number) =>
+    Math.max(0, Math.min(max, value));
 
-  const sx = selection.x * scaleX;
-  const sy = selection.y * scaleY;
-  const sw = selection.width * scaleX;
-  const sh = selection.height * scaleY;
+  const sx = clamp((selection.x - offsetX) / scale, img.width);
+  const sy = clamp((selection.y - offsetY) / scale, img.height);
+  const endX = clamp(
+    (selection.x + selection.width - offsetX) / scale,
+    img.width,
+  );
+  const endY = clamp(
+    (selection.y + selection.height - offsetY) / scale,
+    img.height,
+  );
+  const sw = endX - sx;
+  const sh = endY - sy;
 
-  canvas.width = sw;
-  canvas.height = sh;
+  if (sw <= 0 || sh <= 0) {
+    throw new Error("The selection must overlap the displayed image.");
+  }
 
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+  canvas.width = Math.ceil(sw);
+  canvas.height = Math.ceil(sh);
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
 
   return canvas.toDataURL("image/png");
 }
